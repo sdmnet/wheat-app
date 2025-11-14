@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج جمع البيانات الجغرافية</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.27/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input:disabled {
+            background: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        .coord-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .map-section {
+            position: relative;
+        }
+
+        #viewDiv {
+            height: 500px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .map-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-right: 4px solid #ffc107;
+        }
+
+        .map-info p {
+            margin: 5px 0;
+            color: #856404;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-clear {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        @media (max-width: 968px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📍 نموذج جمع البيانات الجغرافية الزراعية</h1>
+            <p style="font-size: 1.2em; margin-top: 10px;">حدد الموقع على الخريطة وأدخل البيانات المطلوبة</p>
+        </div>
+
+        <div class="content">
+            <div class="form-section">
+                <h2 style="margin-bottom: 20px; color: #667eea;">📝 البيانات الأساسية</h2>
+                
+                <div class="form-group">
+                    <label>ناوى گوند / اسم القرية:</label>
+                    <input type="text" id="villageName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>ناوى جوتيار / اسم المزارع:</label>
+                    <input type="text" id="farmerName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>ژمارەی موبايل / رقم الموبايل:</label>
+                    <input type="tel" id="mobileNumber" required>
+                </div>
+
+                <div class="form-group">
+                    <label>رقم العقد او السند الملك:</label>
+                    <input type="text" id="contractNumber" required>
+                </div>
+
+                <div class="form-group">
+                    <label>مساحة العقد او الملك (دونم):</label>
+                    <input type="number" id="propertyArea" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>المساحة المزروعة ديم (دونم):</label>
+                    <input type="number" id="rainfedArea" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>المساحة المزروعة مروي (دونم):</label>
+                    <input type="number" id="irrigatedArea" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>سەرچاوەی ئاو / مصدر المياه:</label>
+                    <input type="text" id="waterSource" required>
+                </div>
+
+                <div class="form-group">
+                    <label>جوری ئاودان / نوع الري:</label>
+                    <input type="text" id="waterType" required>
+                </div>
+
+                <h3 style="margin: 25px 0 15px 0; color: #667eea;">📍 الإحداثيات (تلقائي)</h3>
+                <div class="coord-group">
+                    <div class="form-group">
+                        <label>X (خط الطول):</label>
+                        <input type="text" id="coordX" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Y (خط العرض):</label>
+                        <input type="text" id="coordY" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Z (الارتفاع):</label>
+                        <input type="text" id="coordZ" disabled value="0">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-submit" id="submitBtn">
+                        ✉️ إرسال البيانات
+                    </button>
+                    <button class="btn btn-clear" id="clearBtn">
+                        🗑️ مسح
+                    </button>
+                </div>
+
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+
+            <div class="map-section">
+                <div id="viewDiv"></div>
+                <div class="map-info">
+                    <p><strong>📌 كيفية الاستخدام:</strong></p>
+                    <p>1️⃣ اضغط على الخريطة لتحديد الموقع</p>
+                    <p>2️⃣ سيتم ملء الإحداثيات تلقائياً</p>
+                    <p>3️⃣ أكمل بقية البيانات وأرسل النموذج</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ضع رابط Google Apps Script هنا
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_4FGe6yp8MzhZLMXm6IzQTE5bYTs5UuK9SEJ89Hr9eLccv1goTZH5L6nJHpjuA7Cg/exec';
+
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/layers/GraphicsLayer",
+            "esri/widgets/Locate"
+        ], function(Map, MapView, Graphic, GraphicsLayer, Locate) {
+            
+            const graphicsLayer = new GraphicsLayer();
+            
+            const map = new Map({
+                basemap: "satellite",
+                layers: [graphicsLayer]
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [43.0, 36.5], // مركز دهوك
+                zoom: 10
+            });
+
+            const locate = new Locate({
+                view: view,
+                useHeadingEnabled: false,
+                goToOverride: function(view, options) {
+                    options.target.scale = 1500;
+                    return view.goTo(options.target);
+                }
+            });
+            view.ui.add(locate, "top-left");
+
+            let currentPoint = null;
+
+            view.on("click", function(event) {
+                graphicsLayer.removeAll();
+                
+                const point = {
+                    type: "point",
+                    longitude: event.mapPoint.longitude,
+                    latitude: event.mapPoint.latitude
+                };
+
+                const markerSymbol = {
+                    type: "simple-marker",
+                    color: [226, 119, 40],
+                    outline: {
+                        color: [255, 255, 255],
+                        width: 3
+                    },
+                    size: 15
+                };
+
+                const pointGraphic = new Graphic({
+                    geometry: point,
+                    symbol: markerSymbol
+                });
+
+                graphicsLayer.add(pointGraphic);
+
+                document.getElementById('coordX').value = event.mapPoint.longitude.toFixed(6);
+                document.getElementById('coordY').value = event.mapPoint.latitude.toFixed(6);
+                
+                currentPoint = event.mapPoint;
+            });
+
+            document.getElementById('submitBtn').addEventListener('click', async function() {
+                if (!validateForm()) {
+                    showStatus('الرجاء ملء جميع الحقول المطلوبة', 'error');
+                    return;
+                }
+
+                const formData = {
+                    villageName: document.getElementById('villageName').value,
+                    farmerName: document.getElementById('farmerName').value,
+                    mobileNumber: document.getElementById('mobileNumber').value,
+                    contractNumber: document.getElementById('contractNumber').value,
+                    propertyArea: document.getElementById('propertyArea').value,
+                    rainfedArea: document.getElementById('rainfedArea').value,
+                    irrigatedArea: document.getElementById('irrigatedArea').value,
+                    waterSource: document.getElementById('waterSource').value,
+                    waterType: document.getElementById('waterType').value,
+                    coordX: document.getElementById('coordX').value,
+                    coordY: document.getElementById('coordY').value,
+                    coordZ: document.getElementById('coordZ').value,
+                    timestamp: new Date().toISOString()
+                };
+
+                try {
+                    document.getElementById('submitBtn').disabled = true;
+                    document.getElementById('submitBtn').textContent = '⏳ جاري الإرسال...';
+
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    showStatus('✅ تم إرسال البيانات بنجاح!', 'success');
+                    clearForm();
+                    graphicsLayer.removeAll();
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus('❌ حدث خطأ في الإرسال. الرجاء المحاولة مرة أخرى', 'error');
+                } finally {
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('submitBtn').textContent = '✉️ إرسال البيانات';
+                }
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', function() {
+                clearForm();
+                graphicsLayer.removeAll();
+            });
+
+            function validateForm() {
+                const requiredFields = [
+                    'villageName', 'farmerName', 'mobileNumber', 'contractNumber',
+                    'propertyArea', 'rainfedArea', 'irrigatedArea', 'waterSource', 'waterType',
+                    'coordX', 'coordY'
+                ];
+
+                for (let field of requiredFields) {
+                    if (!document.getElementById(field).value) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function clearForm() {
+                document.getElementById('villageName').value = '';
+                document.getElementById('farmerName').value = '';
+                document.getElementById('mobileNumber').value = '';
+                document.getElementById('contractNumber').value = '';
+                document.getElementById('propertyArea').value = '';
+                document.getElementById('rainfedArea').value = '';
+                document.getElementById('irrigatedArea').value = '';
+                document.getElementById('waterSource').value = '';
+                document.getElementById('waterType').value = '';
+                document.getElementById('coordX').value = '';
+                document.getElementById('coordY').value = '';
+                document.getElementById('coordZ').value = '0';
+            }
+
+            function showStatus(message, type) {
+                const statusDiv = document.getElementById('statusMessage');
+                statusDiv.textContent = message;
+                statusDiv.className = 'status-message status-' + type;
+                statusDiv.style.display = 'block';
+
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>
